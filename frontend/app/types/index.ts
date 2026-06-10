@@ -26,7 +26,10 @@ export interface Client {
   driver_license_issue_date: string | null
   driver_experience_years: number
   passport_scan: string | null
+  passport_front: string | null
+  passport_back: string | null
   driver_license_scan: string | null
+  driver_photo: string | null
   qr_code_path: string | null
   is_vip: boolean
   notes: string | null

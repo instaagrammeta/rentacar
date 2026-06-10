@@ -96,15 +96,49 @@ const sending = ref(false)
 const qrUrl = computed(() => (client.value?.qr_code_path ? api.fileUrl(client.value.qr_code_path) : ''))
 
 async function load() {
-  client.value = await api.clients.get(id)
-  form.value = { ...client.value }
-  history.value = await api.clients.history(id)
+  try {
+    client.value = await api.clients.get(id)
+    form.value = { ...client.value }
+  } catch {
+    return
+  }
+  // History is non-critical: a failure here must not block editing.
+  try {
+    history.value = await api.clients.history(id)
+  } catch {
+    /* ignore */
+  }
+}
+
+// Build a clean payload with only the editable fields (avoids sending
+// computed/read-only fields back to the API).
+function buildPayload() {
+  const f = form.value
+  return {
+    first_name: f.first_name,
+    last_name: f.last_name,
+    phone: f.phone,
+    email: f.email ?? '',
+    date_of_birth: f.date_of_birth ?? '',
+    passport_number: f.passport_number ?? '',
+    driver_license_number: f.driver_license_number ?? '',
+    driver_license_issue_date: f.driver_license_issue_date ?? '',
+    driver_experience_years: Number(f.driver_experience_years) || 0,
+    status: f.status,
+    notes: f.notes ?? '',
+    is_vip: !!f.is_vip,
+    passport_front: f.passport_front ?? null,
+    passport_back: f.passport_back ?? null,
+    driver_license_scan: f.driver_license_scan ?? null,
+    driver_photo: f.driver_photo ?? null,
+  }
 }
 
 async function save() {
   saving.value = true
   try {
-    client.value = await api.clients.update(id, form.value)
+    client.value = await api.clients.update(id, buildPayload())
+    form.value = { ...client.value }
     ui.success('Данные сохранены')
   } catch {
     /* handled centrally */
