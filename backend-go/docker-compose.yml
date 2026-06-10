@@ -1,0 +1,70 @@
+# Rentacar CRM — public online backend (Go + Gin + PostgreSQL + Redis).
+#
+# Quick start:
+#   docker compose up --build
+#
+# The API will be available at http://localhost:5000/api
+# Default login: admin / admin123
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rentacar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rentacar}
+      POSTGRES_DB: ${POSTGRES_DB:-rentacar}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rentacar} -d ${POSTGRES_DB:-rentacar}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      RENTACAR_ENV: production
+      RENTACAR_PORT: "5000"
+      RENTACAR_DATABASE_URI: "postgres://${POSTGRES_USER:-rentacar}:${POSTGRES_PASSWORD:-rentacar}@postgres:5432/${POSTGRES_DB:-rentacar}?sslmode=disable"
+      RENTACAR_REDIS_ADDR: "redis:6379"
+      RENTACAR_REDIS_ENABLED: "true"
+      RENTACAR_JWT_SECRET: ${RENTACAR_JWT_SECRET:-change-me-in-production}
+      RENTACAR_SECRET_KEY: ${RENTACAR_SECRET_KEY:-change-me-in-production}
+      RENTACAR_AUTO_SEED: "true"
+      RENTACAR_SEED_DEMO: "true"
+      RENTACAR_CORS_ORIGINS: ${RENTACAR_CORS_ORIGINS:-*}
+    volumes:
+      - backenddata:/app/data
+    ports:
+      - "5000:5000"
+
+volumes:
+  pgdata:
+  redisdata:
+  backenddata:

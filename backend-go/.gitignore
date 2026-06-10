@@ -1,0 +1,16 @@
+# Runtime data
+/data/
+*.db
+*.log
+
+# Build artefacts
+/bin/
+/out/
+server
+seed
+
+# Local environment
+.env
+
+# OS / editor
+.DS_Store
