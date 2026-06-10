@@ -19,12 +19,23 @@ $root = $PSScriptRoot
 
 Write-Host "==> [1/5] Building Python backend (PyInstaller)" -ForegroundColor Green
 Push-Location "$root/backend"
+# Clean previous build artifacts so a stale onefile/onedir output cannot be
+# confused with the current one.
+Remove-Item -Recurse -Force "build", "dist" -ErrorAction SilentlyContinue
 python -m venv .venv
 & ".venv/Scripts/python.exe" -m pip install --upgrade pip
 & ".venv/Scripts/python.exe" -m pip install -r requirements.txt
 & ".venv/Scripts/python.exe" -m pip install pyinstaller
 & ".venv/Scripts/python.exe" -m PyInstaller rentacar-backend.spec --noconfirm
 Pop-Location
+
+# Verify the backend executable was produced (one-folder build).
+$backendExe = "$root/backend/dist/rentacar-backend/rentacar-backend.exe"
+if (-not (Test-Path $backendExe)) {
+    Write-Host "ОШИБКА: сборка backend не удалась — не найден $backendExe" -ForegroundColor Red
+    Write-Host "Проверьте вывод PyInstaller выше (шаг 1)." -ForegroundColor Red
+    exit 1
+}
 
 Write-Host "==> [2/5] Building Vue frontend (Vite)" -ForegroundColor Green
 Push-Location "$root/frontend"
