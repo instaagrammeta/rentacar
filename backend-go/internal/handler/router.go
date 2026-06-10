@@ -60,7 +60,6 @@ func (h *Handler) SetupRouter() *gin.Engine {
 	clients := api.Group("/clients", auth.RequireAuth(), auth.RequirePermission("clients"))
 	{
 		clients.GET("", h.ListClients)
-		clients.GET("/search", h.SearchClient)
 		clients.GET("/:id", h.GetClient)
 		clients.GET("/:id/history", h.ClientHistory)
 		clients.POST("", h.CreateClient)
@@ -72,12 +71,14 @@ func (h *Handler) SetupRouter() *gin.Engine {
 	cars := api.Group("/cars", auth.RequireAuth(), auth.RequirePermission("cars"))
 	{
 		cars.GET("", h.ListCars)
-		cars.GET("/available", h.AvailableCars)
 		cars.GET("/:id", h.GetCar)
 		cars.POST("", h.CreateCar)
 		cars.PUT("/:id", h.UpdateCar)
 		cars.DELETE("/:id", h.DeleteCar)
 	}
+	// Registered outside the /cars group: a static segment cannot be a sibling
+	// of the "/cars/:id" wildcard in Gin's router tree.
+	api.GET("/cars-available", auth.RequireAuth(), auth.RequirePermission("cars"), h.AvailableCars)
 
 	// ---- Reservations ----
 	reservations := api.Group("/reservations", auth.RequireAuth(), auth.RequirePermission("reservations"))

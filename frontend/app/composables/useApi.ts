@@ -105,7 +105,7 @@ export function useApi() {
 
     cars: {
       list: (query?: Query) => request<Paginated<Car>>('/cars', { query }),
-      available: () => request<Car[]>('/cars/available'),
+      available: () => request<Car[]>('/cars-available'),
       get: (id: number) => request<Car>(`/cars/${id}`),
       create: (body: Query) => request<Car>('/cars', { method: 'POST', body }),
       update: (id: number, body: Query) => request<Car>(`/cars/${id}`, { method: 'PUT', body }),
