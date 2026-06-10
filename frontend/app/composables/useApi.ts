@@ -25,9 +25,27 @@ function getStoredToken(): string | null {
   return import.meta.client ? localStorage.getItem('token') : null
 }
 
+// resolveApiBase makes the SPA work out-of-the-box when it is opened from a
+// remote server: if the configured base still points at localhost but the page
+// itself is served from another host, derive the API URL from the current host
+// (same hostname, port 5000). An explicit non-localhost NUXT_PUBLIC_API_BASE
+// (e.g. a real domain behind a reverse proxy) always wins.
+function resolveApiBase(configured: string): string {
+  if (import.meta.client) {
+    const isLocalConfig =
+      !configured || configured.includes('localhost') || configured.includes('127.0.0.1')
+    const host = window.location.hostname
+    const onLocalhost = host === 'localhost' || host === '127.0.0.1'
+    if (isLocalConfig && !onLocalhost) {
+      return `${window.location.protocol}//${host}:5000/api`
+    }
+  }
+  return configured || 'http://localhost:5000/api'
+}
+
 export function useApi() {
   const config = useRuntimeConfig()
-  const base = config.public.apiBase as string
+  const base = resolveApiBase(config.public.apiBase as string)
   const ui = useUiStore()
 
   async function request<T>(path: string, opts: Record<string, any> = {}): Promise<T> {
