@@ -110,7 +110,7 @@ func (s *Service) dumpData() map[string][]map[string]interface{} {
 // collectUploadPaths gathers all relative upload paths referenced by the data.
 func collectUploadPaths(data map[string][]map[string]interface{}) map[string]bool {
 	paths := map[string]bool{}
-	keys := []string{"passport_scan", "driver_license_scan", "qr_code_path", "file_path", "logo_path"}
+	keys := []string{"passport_scan", "passport_front", "passport_back", "driver_license_scan", "driver_photo", "qr_code_path", "file_path", "logo_path"}
 	for _, rows := range data {
 		for _, row := range rows {
 			for _, k := range keys {
@@ -268,7 +268,8 @@ func (s *Service) insertRow(table string, m map[string]interface{}) {
 			DateOfBirth: asDatePtr(m, "date_of_birth"), PassportNumber: asStrPtr(m, "passport_number"),
 			DriverLicenseNumber: asStrPtr(m, "driver_license_number"), DriverLicenseIssueDate: asDatePtr(m, "driver_license_issue_date"),
 			DriverExperienceYears: asInt(m, "driver_experience_years"), PassportScan: asStrPtr(m, "passport_scan"),
-			DriverLicenseScan: asStrPtr(m, "driver_license_scan"), QRCodePath: asStrPtr(m, "qr_code_path"),
+			PassportFront: asStrPtr(m, "passport_front"), PassportBack: asStrPtr(m, "passport_back"),
+			DriverLicenseScan: asStrPtr(m, "driver_license_scan"), DriverPhoto: asStrPtr(m, "driver_photo"), QRCodePath: asStrPtr(m, "qr_code_path"),
 			IsVIP: asBool(m, "is_vip"), Notes: asStrPtr(m, "notes"), Status: models.ClientStatus(asStr(m, "status")),
 		})
 	case "cars":
@@ -292,6 +293,8 @@ func (s *Service) insertRow(table string, m map[string]interface{}) {
 			Base: base(m), ContractNumber: asStr(m, "contract_number"), ClientID: asUint(m, "client_id"),
 			CarID: asUint(m, "car_id"), ReservationID: asUintPtr(m, "reservation_id"), EmployeeID: asUintPtr(m, "employee_id"),
 			RentalStart: asDateVal(m, "rental_start"), RentalEnd: asDateVal(m, "rental_end"),
+			PickupAt: asDateTimePtr(m, "pickup_at"), DueAt: asDateTimePtr(m, "due_at"),
+			Reminder1hSent: asBool(m, "reminder_1h_sent"), Reminder30mSent: asBool(m, "reminder_30m_sent"),
 			Deposit: asFloat(m, "deposit"), DailyPrice: asFloat(m, "daily_price"), TotalPrice: asFloat(m, "total_price"),
 			StartMileage: asIntPtr(m, "start_mileage"), PDFPath: asStrPtr(m, "pdf_path"), Notes: asStrPtr(m, "notes"),
 			Status: models.RentalStatus(asStr(m, "status")),

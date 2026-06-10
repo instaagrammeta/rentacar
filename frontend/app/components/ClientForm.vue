@@ -14,6 +14,16 @@
       <FormField v-model="form.notes" type="textarea" label="Примечание" />
     </div>
     <FormField v-model="form.is_vip" type="checkbox" checkbox-label="VIP-клиент" />
+
+    <div class="mt-2">
+      <p class="mb-3 text-sm font-semibold text-ink">Документы (фото)</p>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <DocumentUpload v-model="form.passport_front" label="Паспорт — лицевая сторона" subfolder="clients" />
+        <DocumentUpload v-model="form.passport_back" label="Паспорт — обратная сторона" subfolder="clients" />
+        <DocumentUpload v-model="form.driver_license_scan" label="Водительское удостоверение" subfolder="clients" />
+        <DocumentUpload v-model="form.driver_photo" label="Фото водителя (необязательно)" subfolder="clients" />
+      </div>
+    </div>
   </div>
 </template>
 

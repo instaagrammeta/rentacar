@@ -17,6 +17,7 @@
 
     <DataTable :columns="columns" :rows="data.items" :loading="loading" empty="Договоров нет">
       <template #rental_start="{ row }">{{ fmt.date(row.rental_start) }} — {{ fmt.date(row.rental_end) }}</template>
+      <template #pickup_at="{ row }">{{ fmt.dateTime(row.pickup_at) }}</template>
       <template #total_price="{ row }">{{ fmt.money(row.total_price) }}</template>
       <template #status="{ row }"><StatusBadge :status="row.status" :label="row.status_label" /></template>
       <template #actions="{ row }">
@@ -33,6 +34,8 @@
         <FormField v-model="form.car_id" type="select" label="Автомобиль" :options="carOptions" placeholder="Выберите авто" />
         <FormField v-model="form.rental_start" type="date" label="Начало аренды" required />
         <FormField v-model="form.rental_end" type="date" label="Окончание аренды" required />
+        <FormField v-model="form.pickup_at" type="datetime-local" label="Время выдачи (когда принят автомобиль)" />
+        <FormField v-model="form.due_at" type="datetime-local" label="Срок возврата (дата и время)" />
         <FormField v-model="form.deposit" type="number" step="0.01" label="Депозит" />
         <FormField v-model="form.total_price" type="number" step="0.01" label="Итоговая сумма (необязательно)" />
       </div>
@@ -57,6 +60,7 @@ const columns = [
   { key: 'client_name', label: 'Клиент' },
   { key: 'car_name', label: 'Автомобиль' },
   { key: 'rental_start', label: 'Период' },
+  { key: 'pickup_at', label: 'Выдан' },
   { key: 'total_price', label: 'Сумма' },
   { key: 'status', label: 'Статус' },
 ]
@@ -68,9 +72,16 @@ const page = ref(1)
 
 const showCreate = ref(false)
 const saving = ref(false)
-const form = ref<Record<string, any>>({ client_id: '', car_id: '', rental_start: '', rental_end: '', deposit: 0, total_price: 0 })
+const form = ref<Record<string, any>>({ client_id: '', car_id: '', rental_start: '', rental_end: '', pickup_at: '', due_at: '', deposit: 0, total_price: 0 })
 const clientOptions = ref<Option[]>([])
 const carOptions = ref<Option[]>([])
+
+// Local datetime string "YYYY-MM-DDTHH:MM" for datetime-local inputs.
+function nowLocal(): string {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 async function load() {
   loading.value = true
@@ -83,7 +94,7 @@ async function load() {
 
 async function openCreate() {
   showCreate.value = true
-  form.value = { client_id: '', car_id: '', rental_start: '', rental_end: '', deposit: 0, total_price: 0 }
+  form.value = { client_id: '', car_id: '', rental_start: '', rental_end: '', pickup_at: nowLocal(), due_at: '', deposit: 0, total_price: 0 }
   const [clients, cars] = await Promise.all([api.clients.list({ per_page: 200 }), api.cars.available()])
   clientOptions.value = clients.items.map((c) => ({ value: String(c.id), label: `${c.full_name} (${c.client_code})` }))
   carOptions.value = cars.map((c) => ({ value: String(c.id), label: c.display_name }))

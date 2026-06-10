@@ -2,6 +2,7 @@
   <div>
     <PageHeader :title="form.last_name ? `${form.last_name} ${form.first_name}` : 'Клиент'" subtitle="Карточка клиента">
       <template #actions>
+        <button class="btn-secondary" @click="openSms"><AppIcon name="bell" size="18" /> SMS</button>
         <NuxtLink to="/clients" class="btn-secondary"><AppIcon name="back" size="18" /> Назад</NuxtLink>
       </template>
     </PageHeader>
@@ -16,12 +17,22 @@
         </div>
       </form>
 
-      <!-- QR + meta -->
+      <!-- QR + documents -->
       <div class="space-y-5">
         <div class="card p-5 text-center">
           <p class="text-sm text-ink-muted">Код клиента</p>
           <p class="text-lg font-bold text-ink">{{ client?.client_code }}</p>
           <img v-if="qrUrl" :src="qrUrl" alt="QR" class="mx-auto mt-3 h-40 w-40 rounded-xl border border-surface-border" />
+        </div>
+
+        <div class="card p-5">
+          <h3 class="mb-3 font-semibold text-ink">Документы</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <DocThumb :path="client?.passport_front" label="Паспорт (лицо)" />
+            <DocThumb :path="client?.passport_back" label="Паспорт (оборот)" />
+            <DocThumb :path="client?.driver_license_scan" label="Вод. удостоверение" />
+            <DocThumb :path="client?.driver_photo" label="Фото водителя" />
+          </div>
         </div>
       </div>
     </div>
@@ -50,6 +61,16 @@
         </ul>
       </div>
     </div>
+
+    <!-- SMS modal -->
+    <AppModal :open="showSms" title="Отправить SMS клиенту" @close="showSms = false">
+      <p class="mb-3 text-sm text-ink-muted">Получатель: <b class="text-ink">{{ client?.full_name }}</b> ({{ client?.phone }})</p>
+      <FormField v-model="smsText" type="textarea" label="Сообщение" :rows="4" />
+      <template #footer>
+        <button class="btn-secondary" @click="showSms = false">Отмена</button>
+        <button class="btn-primary" :disabled="sending" @click="sendSms">Отправить</button>
+      </template>
+    </AppModal>
   </div>
 </template>
 
@@ -68,6 +89,10 @@ const form = ref<Record<string, any>>({})
 const history = ref<any>({ rentals: [], payments: [], accidents: [], penalties: [] })
 const saving = ref(false)
 
+const showSms = ref(false)
+const smsText = ref('')
+const sending = ref(false)
+
 const qrUrl = computed(() => (client.value?.qr_code_path ? api.fileUrl(client.value.qr_code_path) : ''))
 
 async function load() {
@@ -85,6 +110,25 @@ async function save() {
     /* handled centrally */
   } finally {
     saving.value = false
+  }
+}
+
+function openSms() {
+  smsText.value = ''
+  showSms.value = true
+}
+
+async function sendSms() {
+  if (!smsText.value.trim()) return
+  sending.value = true
+  try {
+    await api.raw(`/clients/${id}/sms`, { method: 'POST', body: { message: smsText.value } })
+    ui.success('SMS отправлено')
+    showSms.value = false
+  } catch {
+    /* handled centrally */
+  } finally {
+    sending.value = false
   }
 }
 

@@ -26,9 +26,15 @@ export default {
           900: '#812018',
         },
         ink: {
-          DEFAULT: '#1f2430',
+          DEFAULT: '#15181d',
           soft: '#5b6472',
           muted: '#8b93a3',
+        },
+        night: {
+          DEFAULT: '#121417',
+          800: '#1a1d22',
+          700: '#23272e',
+          600: '#2e333b',
         },
         surface: {
           DEFAULT: '#ffffff',

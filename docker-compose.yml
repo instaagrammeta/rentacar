@@ -60,6 +60,11 @@ services:
       RENTACAR_AUTO_SEED: "true"
       RENTACAR_SEED_DEMO: "true"
       RENTACAR_CORS_ORIGINS: ${RENTACAR_CORS_ORIGINS:-*}
+      RENTACAR_SMS_ENABLED: ${RENTACAR_SMS_ENABLED:-false}
+      RENTACAR_SMS_URL: ${RENTACAR_SMS_URL:-https://api.zudsms.tj/api/v1/send}
+      RENTACAR_SMS_LOGIN: ${RENTACAR_SMS_LOGIN:-}
+      RENTACAR_SMS_SENDER: ${RENTACAR_SMS_SENDER:-}
+      RENTACAR_SMS_SECRET: ${RENTACAR_SMS_SECRET:-}
     volumes:
       - backenddata:/app/data
     ports:

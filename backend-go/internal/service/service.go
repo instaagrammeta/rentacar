@@ -16,6 +16,7 @@ import (
 	"github.com/instaagrammeta/rentacar/backend-go/internal/config"
 	"github.com/instaagrammeta/rentacar/backend-go/internal/media"
 	"github.com/instaagrammeta/rentacar/backend-go/internal/models"
+	"github.com/instaagrammeta/rentacar/backend-go/internal/sms"
 )
 
 // Service bundles dependencies for the business logic.
@@ -25,11 +26,19 @@ type Service struct {
 	Redis  *redis.Client
 	Tokens *auth.Manager
 	Media  *media.Generator
+	SMS    *sms.Sender
 }
 
 // New builds a Service.
 func New(db *gorm.DB, cfg *config.Config, rds *redis.Client, tokens *auth.Manager, gen *media.Generator) *Service {
-	return &Service{DB: db, Cfg: cfg, Redis: rds, Tokens: tokens, Media: gen}
+	return &Service{
+		DB:     db,
+		Cfg:    cfg,
+		Redis:  rds,
+		Tokens: tokens,
+		Media:  gen,
+		SMS:    sms.New(cfg.SMSEnabled, cfg.SMSURL, cfg.SMSLogin, cfg.SMSSender, cfg.SMSSecret),
+	}
 }
 
 // Actor identifies the user performing an action, for the audit trail.
@@ -70,7 +79,7 @@ func (s *Service) GetSettings() (*models.CompanySettings, error) {
 	var settings models.CompanySettings
 	err := s.DB.Order("id asc").First(&settings).Error
 	if err == gorm.ErrRecordNotFound {
-		settings = models.CompanySettings{CompanyName: "Rentacar CRM", Currency: "RUB"}
+		settings = models.CompanySettings{CompanyName: "Rentacar CRM", Currency: "TJS"}
 		if err := s.DB.Create(&settings).Error; err != nil {
 			return nil, err
 		}
@@ -110,6 +119,9 @@ func parseDateTime(value string) (time.Time, error) {
 		return t, nil
 	}
 	if t, err := time.Parse("2006-01-02T15:04:05", value); err == nil {
+		return t, nil
+	}
+	if t, err := time.Parse("2006-01-02T15:04", value); err == nil {
 		return t, nil
 	}
 	if t, err := time.Parse("2006-01-02", value[:min(10, len(value))]); err == nil {

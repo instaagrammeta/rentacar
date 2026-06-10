@@ -63,6 +63,7 @@ func (h *Handler) SetupRouter() *gin.Engine {
 		clients.GET("/:id", h.GetClient)
 		clients.GET("/:id/history", h.ClientHistory)
 		clients.POST("", h.CreateClient)
+		clients.POST("/:id/sms", h.SendClientSMS)
 		clients.PUT("/:id", h.UpdateClient)
 		clients.DELETE("/:id", h.DeleteClient)
 	}

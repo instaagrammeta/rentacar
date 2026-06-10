@@ -35,6 +35,10 @@ const form = ref<Record<string, any>>({
   status: 'pending_verification',
   notes: '',
   is_vip: false,
+  passport_front: null,
+  passport_back: null,
+  driver_license_scan: null,
+  driver_photo: null,
 })
 const saving = ref(false)
 

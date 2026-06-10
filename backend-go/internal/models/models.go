@@ -80,7 +80,10 @@ type Client struct {
 	DriverLicenseIssueDate *time.Time   `gorm:"type:date" json:"driver_license_issue_date"`
 	DriverExperienceYears  int          `gorm:"not null;default:0" json:"driver_experience_years"`
 	PassportScan           *string      `gorm:"size:255" json:"passport_scan"`
+	PassportFront          *string      `gorm:"size:255" json:"passport_front"`
+	PassportBack           *string      `gorm:"size:255" json:"passport_back"`
 	DriverLicenseScan      *string      `gorm:"size:255" json:"driver_license_scan"`
+	DriverPhoto            *string      `gorm:"size:255" json:"driver_photo"`
 	QRCodePath             *string      `gorm:"size:255" json:"qr_code_path"`
 	IsVIP                  bool         `gorm:"not null;default:false" json:"is_vip"`
 	Notes                  *string      `gorm:"type:text" json:"notes"`
@@ -112,7 +115,10 @@ func (c *Client) ToMap() map[string]interface{} {
 	m["driver_license_issue_date"] = isoDate(c.DriverLicenseIssueDate)
 	m["driver_experience_years"] = c.DriverExperienceYears
 	m["passport_scan"] = c.PassportScan
+	m["passport_front"] = c.PassportFront
+	m["passport_back"] = c.PassportBack
 	m["driver_license_scan"] = c.DriverLicenseScan
+	m["driver_photo"] = c.DriverPhoto
 	m["qr_code_path"] = c.QRCodePath
 	m["is_vip"] = c.IsVIP
 	m["notes"] = c.Notes
@@ -227,20 +233,24 @@ func (r *Reservation) ToMap() map[string]interface{} {
 // Rental is a signed rental contract.
 type Rental struct {
 	Base
-	ContractNumber string       `gorm:"size:32;uniqueIndex;not null" json:"contract_number"`
-	ClientID       uint         `gorm:"not null;index" json:"client_id"`
-	CarID          uint         `gorm:"not null;index" json:"car_id"`
-	ReservationID  *uint        `json:"reservation_id"`
-	EmployeeID     *uint        `json:"employee_id"`
-	RentalStart    time.Time    `gorm:"type:date;not null" json:"rental_start"`
-	RentalEnd      time.Time    `gorm:"type:date;not null" json:"rental_end"`
-	Deposit        float64      `gorm:"not null;default:0" json:"deposit"`
-	DailyPrice     float64      `gorm:"not null;default:0" json:"daily_price"`
-	TotalPrice     float64      `gorm:"not null;default:0" json:"total_price"`
-	StartMileage   *int         `json:"start_mileage"`
-	PDFPath        *string      `gorm:"size:255" json:"pdf_path"`
-	Notes          *string      `gorm:"type:text" json:"notes"`
-	Status         RentalStatus `gorm:"size:32;not null;default:active" json:"status"`
+	ContractNumber  string       `gorm:"size:32;uniqueIndex;not null" json:"contract_number"`
+	ClientID        uint         `gorm:"not null;index" json:"client_id"`
+	CarID           uint         `gorm:"not null;index" json:"car_id"`
+	ReservationID   *uint        `json:"reservation_id"`
+	EmployeeID      *uint        `json:"employee_id"`
+	RentalStart     time.Time    `gorm:"type:date;not null" json:"rental_start"`
+	RentalEnd       time.Time    `gorm:"type:date;not null" json:"rental_end"`
+	PickupAt        *time.Time   `json:"pickup_at"`
+	DueAt           *time.Time   `json:"due_at"`
+	Reminder1hSent  bool         `gorm:"column:reminder_1h_sent;not null;default:false" json:"reminder_1h_sent"`
+	Reminder30mSent bool         `gorm:"column:reminder_30m_sent;not null;default:false" json:"reminder_30m_sent"`
+	Deposit         float64      `gorm:"not null;default:0" json:"deposit"`
+	DailyPrice      float64      `gorm:"not null;default:0" json:"daily_price"`
+	TotalPrice      float64      `gorm:"not null;default:0" json:"total_price"`
+	StartMileage    *int         `json:"start_mileage"`
+	PDFPath         *string      `gorm:"size:255" json:"pdf_path"`
+	Notes           *string      `gorm:"type:text" json:"notes"`
+	Status          RentalStatus `gorm:"size:32;not null;default:active" json:"status"`
 
 	Client        *Client        `gorm:"foreignKey:ClientID" json:"-"`
 	Car           *Car           `gorm:"foreignKey:CarID" json:"-"`
@@ -260,6 +270,14 @@ func (r *Rental) ToMap() map[string]interface{} {
 	m["employee_id"] = r.EmployeeID
 	m["rental_start"] = r.RentalStart.Format(dateLayout)
 	m["rental_end"] = r.RentalEnd.Format(dateLayout)
+	m["pickup_at"] = nil
+	if r.PickupAt != nil {
+		m["pickup_at"] = isoDateTime(*r.PickupAt)
+	}
+	m["due_at"] = nil
+	if r.DueAt != nil {
+		m["due_at"] = isoDateTime(*r.DueAt)
+	}
 	m["deposit"] = r.Deposit
 	m["daily_price"] = r.DailyPrice
 	m["total_price"] = r.TotalPrice
@@ -477,7 +495,7 @@ type CompanySettings struct {
 	Phone         *string `gorm:"size:64" json:"phone"`
 	Email         *string `gorm:"size:120" json:"email"`
 	LogoPath      *string `gorm:"size:255" json:"logo_path"`
-	Currency      string  `gorm:"size:8;not null;default:'RUB'" json:"currency"`
+	Currency      string  `gorm:"size:8;not null;default:'TJS'" json:"currency"`
 	ContractTerms *string `gorm:"type:text" json:"contract_terms"`
 }
 

@@ -1,11 +1,11 @@
 <template>
   <aside
-    class="fixed inset-y-0 left-0 z-40 w-64 transform border-r border-surface-border bg-white transition-transform duration-200 lg:translate-x-0"
+    class="fixed inset-y-0 left-0 z-40 w-64 transform bg-night text-gray-300 transition-transform duration-200 lg:translate-x-0"
     :class="ui.sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
   >
-    <div class="flex h-16 items-center justify-between border-b border-surface-border px-5">
-      <AppLogo />
-      <button class="lg:hidden text-ink-muted" @click="ui.closeSidebar()">
+    <div class="flex h-16 items-center justify-between border-b border-white/10 px-5">
+      <AppLogo dark />
+      <button class="lg:hidden text-gray-400" @click="ui.closeSidebar()">
         <AppIcon name="close" />
       </button>
     </div>
@@ -15,8 +15,10 @@
         v-for="item in visibleItems"
         :key="item.to"
         :to="item.to"
-        class="nav-link"
-        :class="{ 'nav-link-active': isActive(item.to) }"
+        class="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition"
+        :class="isActive(item.to)
+          ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
+          : 'text-gray-400 hover:bg-white/5 hover:text-white'"
         @click="ui.closeSidebar()"
       >
         <AppIcon :name="item.icon" />
@@ -24,8 +26,11 @@
       </NuxtLink>
     </nav>
 
-    <div class="absolute inset-x-0 bottom-0 border-t border-surface-border p-3">
-      <button class="nav-link w-full text-left" @click="onLogout">
+    <div class="absolute inset-x-0 bottom-0 border-t border-white/10 p-3">
+      <button
+        class="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-gray-400 transition hover:bg-white/5 hover:text-white"
+        @click="onLogout"
+      >
         <AppIcon name="logout" />
         <span>Выйти</span>
       </button>

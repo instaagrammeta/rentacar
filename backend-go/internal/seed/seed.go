@@ -86,7 +86,7 @@ func ensureSettings(db *gorm.DB) {
 		Address:       &addr,
 		Phone:         &phone,
 		Email:         &email,
-		Currency:      "RUB",
+		Currency:      "TJS",
 		ContractTerms: &terms,
 	})
 	log.Println("Созданы настройки компании")

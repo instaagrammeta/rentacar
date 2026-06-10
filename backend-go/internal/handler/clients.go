@@ -112,3 +112,20 @@ func (h *Handler) DeleteClient(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Клиент удалён"})
 }
+
+// SendClientSMS sends a custom SMS message to a client.
+func (h *Handler) SendClientSMS(c *gin.Context) {
+	id, ok := paramID(c, "id")
+	if !ok {
+		return
+	}
+	var body struct {
+		Message string `json:"message"`
+	}
+	_ = c.ShouldBindJSON(&body)
+	if err := h.Svc.SendClientSMS(id, body.Message, actorFrom(c)); err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "SMS отправлено"})
+}

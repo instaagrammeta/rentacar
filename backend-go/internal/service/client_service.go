@@ -127,7 +127,10 @@ type ClientInput struct {
 	DriverLicenseIssueDate *string `json:"driver_license_issue_date"`
 	DriverExperienceYears  *int    `json:"driver_experience_years"`
 	PassportScan           *string `json:"passport_scan"`
+	PassportFront          *string `json:"passport_front"`
+	PassportBack           *string `json:"passport_back"`
 	DriverLicenseScan      *string `json:"driver_license_scan"`
+	DriverPhoto            *string `json:"driver_photo"`
 	IsVIP                  *bool   `json:"is_vip"`
 	Notes                  *string `json:"notes"`
 	Status                 *string `json:"status"`
@@ -168,7 +171,10 @@ func (s *Service) CreateClient(in ClientInput, actor *Actor) (*models.Client, er
 		DriverLicenseIssueDate: licIssue,
 		DriverExperienceYears:  derefInt(in.DriverExperienceYears),
 		PassportScan:           optStr(in.PassportScan),
+		PassportFront:          optStr(in.PassportFront),
+		PassportBack:           optStr(in.PassportBack),
 		DriverLicenseScan:      optStr(in.DriverLicenseScan),
+		DriverPhoto:            optStr(in.DriverPhoto),
 		Notes:                  optStr(in.Notes),
 		Status:                 status,
 	}
@@ -219,6 +225,15 @@ func (s *Service) UpdateClient(id uint, in ClientInput, actor *Actor) (*models.C
 	}
 	if in.PassportScan != nil {
 		client.PassportScan = optStr(in.PassportScan)
+	}
+	if in.PassportFront != nil {
+		client.PassportFront = optStr(in.PassportFront)
+	}
+	if in.PassportBack != nil {
+		client.PassportBack = optStr(in.PassportBack)
+	}
+	if in.DriverPhoto != nil {
+		client.DriverPhoto = optStr(in.DriverPhoto)
 	}
 	if in.DriverLicenseScan != nil {
 		client.DriverLicenseScan = optStr(in.DriverLicenseScan)

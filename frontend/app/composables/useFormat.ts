@@ -1,6 +1,6 @@
 // Formatting helpers shared across pages (currency, dates).
 export function useFormat() {
-  const money = (value: number | null | undefined, currency = '₽') => {
+  const money = (value: number | null | undefined, currency = 'смн') => {
     const n = Number(value || 0)
     return `${n.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`
   }

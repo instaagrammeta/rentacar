@@ -52,6 +52,13 @@ type Config struct {
 	EnableScheduledBackups bool
 	BackupRetentionDays    int
 
+	// SMS (zudsms.tj)
+	SMSEnabled bool
+	SMSURL     string
+	SMSLogin   string
+	SMSSender  string
+	SMSSecret  string
+
 	// CORS
 	CORSOrigins []string
 }
@@ -117,6 +124,12 @@ func Load() *Config {
 
 		EnableScheduledBackups: getenvBool("RENTACAR_ENABLE_BACKUPS", true),
 		BackupRetentionDays:    getenvInt("RENTACAR_BACKUP_RETENTION", 30),
+
+		SMSEnabled: getenvBool("RENTACAR_SMS_ENABLED", false),
+		SMSURL:     getenv("RENTACAR_SMS_URL", "https://api.zudsms.tj/api/v1/send"),
+		SMSLogin:   getenv("RENTACAR_SMS_LOGIN", ""),
+		SMSSender:  getenv("RENTACAR_SMS_SENDER", ""),
+		SMSSecret:  getenv("RENTACAR_SMS_SECRET", ""),
 	}
 
 	cfg.JWTSecret = getenv("RENTACAR_JWT_SECRET", cfg.SecretKey)

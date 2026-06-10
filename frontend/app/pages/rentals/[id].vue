@@ -18,6 +18,8 @@
           <Info label="Клиент" :value="rental.client_name" />
           <Info label="Автомобиль" :value="rental.car_name" />
           <Info label="Период" :value="`${fmt.date(rental.rental_start)} — ${fmt.date(rental.rental_end)}`" />
+          <Info label="Время выдачи" :value="fmt.dateTime(rental.pickup_at)" />
+          <Info label="Срок возврата" :value="fmt.dateTime(rental.due_at)" />
           <Info label="Цена/сутки" :value="fmt.money(rental.daily_price)" />
           <Info label="Депозит" :value="fmt.money(rental.deposit)" />
           <Info label="Итого" :value="fmt.money(rental.total_price)" />

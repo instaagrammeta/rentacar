@@ -62,6 +62,8 @@ type RentalInput struct {
 	EmployeeID    *uint    `json:"employee_id"`
 	RentalStart   string   `json:"rental_start"`
 	RentalEnd     string   `json:"rental_end"`
+	PickupAt      *string  `json:"pickup_at"`
+	DueAt         *string  `json:"due_at"`
 	Deposit       *float64 `json:"deposit"`
 	TotalPrice    *float64 `json:"total_price"`
 	StartMileage  *int     `json:"start_mileage"`
@@ -120,6 +122,21 @@ func (s *Service) CreateRental(in RentalInput, actor *Actor) (*models.Rental, er
 		employeeID = in.EmployeeID
 	}
 
+	// Pickup time (when the car was handed over) defaults to now.
+	pickup := time.Now()
+	if in.PickupAt != nil && *in.PickupAt != "" {
+		if t, err := parseDateTime(*in.PickupAt); err == nil {
+			pickup = t
+		}
+	}
+	// Due time (precise return deadline) defaults to the end date at 18:00.
+	due := time.Date(end.Year(), end.Month(), end.Day(), 18, 0, 0, 0, time.Local)
+	if in.DueAt != nil && *in.DueAt != "" {
+		if t, err := parseDateTime(*in.DueAt); err == nil {
+			due = t
+		}
+	}
+
 	rental := &models.Rental{
 		ContractNumber: s.generateContractNumber(),
 		ClientID:       client.ID,
@@ -128,6 +145,8 @@ func (s *Service) CreateRental(in RentalInput, actor *Actor) (*models.Rental, er
 		EmployeeID:     employeeID,
 		RentalStart:    *start,
 		RentalEnd:      *end,
+		PickupAt:       &pickup,
+		DueAt:          &due,
 		Deposit:        deposit,
 		DailyPrice:     car.DailyPrice,
 		TotalPrice:     total,

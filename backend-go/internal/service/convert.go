@@ -103,15 +103,23 @@ func asDateVal(m map[string]interface{}, key string) time.Time {
 
 // asDateTime parses an ISO datetime column.
 func asDateTime(m map[string]interface{}, key string) time.Time {
-	if v, ok := m[key].(string); ok && v != "" {
-		if t, err := time.Parse(time.RFC3339, v); err == nil {
-			return t
-		}
-		if t, err := time.Parse("2006-01-02T15:04:05", v); err == nil {
-			return t
-		}
+	if p := asDateTimePtr(m, key); p != nil {
+		return *p
 	}
 	return time.Now()
+}
+
+// asDateTimePtr parses an optional ISO datetime column (nil when absent).
+func asDateTimePtr(m map[string]interface{}, key string) *time.Time {
+	if v, ok := m[key].(string); ok && v != "" {
+		if t, err := time.Parse(time.RFC3339, v); err == nil {
+			return &t
+		}
+		if t, err := time.Parse("2006-01-02T15:04:05", v); err == nil {
+			return &t
+		}
+	}
+	return nil
 }
 
 // base reconstructs a models.Base (id + timestamps) from an exported row.
