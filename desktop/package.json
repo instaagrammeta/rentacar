@@ -1,0 +1,51 @@
+{
+  "name": "rentacar-crm-desktop",
+  "version": "1.0.0",
+  "description": "Rentacar CRM — десктопное приложение (Electron)",
+  "author": "Rentacar CRM",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^31.1.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.rentacar.crm",
+    "productName": "Rentacar CRM",
+    "directories": {
+      "output": "release",
+      "buildResources": "resources"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "splash.html",
+      "frontend-dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "backend-dist",
+        "to": "backend",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Rentacar CRM",
+      "installerLanguages": ["ru_RU"],
+      "language": "1049"
+    }
+  }
+}
