@@ -3,11 +3,11 @@
 *.db
 *.log
 
-# Build artefacts
+# Build artefacts (anchored to module root so cmd/server & cmd/seed are kept)
 /bin/
 /out/
-server
-seed
+/server
+/seed
 
 # Local environment
 .env
