@@ -22,7 +22,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as User | null,
-    token: useCookie<string | null>('token', { maxAge: 60 * 60 * 24 * 7 }).value,
+    token: import.meta.client ? localStorage.getItem('token') : null,
   }),
 
   getters: {
@@ -48,8 +48,10 @@ export const useAuthStore = defineStore('auth', {
 
     setToken(token: string | null) {
       this.token = token
-      const cookie = useCookie<string | null>('token', { maxAge: 60 * 60 * 24 * 7 })
-      cookie.value = token
+      if (import.meta.client) {
+        if (token) localStorage.setItem('token', token)
+        else localStorage.removeItem('token')
+      }
     },
 
     async login(username: string, password: string) {

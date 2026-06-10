@@ -20,22 +20,29 @@ type Query = Record<string, any>
  * useApi exposes a typed client for the Go backend. The bearer token is read
  * from the `token` cookie and a 401 response clears the session.
  */
+// getStoredToken reads the JWT from localStorage (client-only SPA).
+function getStoredToken(): string | null {
+  return import.meta.client ? localStorage.getItem('token') : null
+}
+
 export function useApi() {
   const config = useRuntimeConfig()
   const base = config.public.apiBase as string
-  const token = useCookie<string | null>('token', { maxAge: 60 * 60 * 24 * 7 })
   const ui = useUiStore()
 
   async function request<T>(path: string, opts: Record<string, any> = {}): Promise<T> {
+    const token = getStoredToken()
     return await $fetch<T>(path, {
       baseURL: base,
-      headers: token.value ? { Authorization: `Bearer ${token.value}` } : {},
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
       onResponseError({ response }) {
         const status = response.status
         const message = (response._data && response._data.error) || 'Произошла ошибка'
         if (status === 401) {
-          if (!path.includes('/auth/login')) {
-            token.value = null
+          if (path.includes('/auth/login')) {
+            ui.error(message || 'Неверное имя пользователя или пароль')
+          } else {
+            if (import.meta.client) localStorage.removeItem('token')
             ui.error('Сессия истекла. Войдите снова.')
             if (import.meta.client && !window.location.pathname.startsWith('/login')) {
               window.location.href = '/login'
@@ -46,6 +53,9 @@ export function useApi() {
         } else if (status >= 400) {
           ui.error(message)
         }
+      },
+      onRequestError() {
+        ui.error('Не удалось подключиться к серверу. Проверьте, что бэкенд запущен.')
       },
       ...opts,
     })
