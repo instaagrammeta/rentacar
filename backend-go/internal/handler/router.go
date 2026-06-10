@@ -168,7 +168,7 @@ func (h *Handler) SetupRouter() *gin.Engine {
 	// ---- Project import/export ----
 	project := api.Group("/project", auth.RequireAuth(), auth.RequireRole(admin))
 	{
-		project.POST("/export", h.ExportProject)
+		project.GET("/export", h.ExportProject)
 		project.POST("/import", h.ImportProject)
 	}
 

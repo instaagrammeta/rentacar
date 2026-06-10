@@ -1,29 +1,22 @@
 {
-  "name": "rentacar-crm-frontend",
-  "version": "1.0.0",
+  "name": "rentacar-frontend",
+  "version": "2.0.0",
   "private": true,
-  "description": "Rentacar CRM — фронтенд (Vue 3 + Vuetify 3)",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@mdi/font": "^7.4.47",
-    "axios": "^1.7.2",
-    "chart.js": "^4.4.3",
-    "pinia": "^2.1.7",
-    "vue": "^3.4.31",
-    "vue-chartjs": "^5.3.1",
-    "vue-i18n": "^9.13.1",
-    "vue-router": "^4.4.0",
-    "vuetify": "^3.6.10"
+    "nuxt": "^4.0.0",
+    "pinia": "^3.0.3",
+    "@pinia/nuxt": "^0.11.2"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.5",
-    "sass": "^1.77.6",
-    "vite": "^5.3.3",
-    "vite-plugin-vuetify": "^2.0.3"
+    "@nuxtjs/tailwindcss": "^6.12.2",
+    "typescript": "^5.6.3"
   }
 }
