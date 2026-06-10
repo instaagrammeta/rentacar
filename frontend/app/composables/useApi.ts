@@ -219,5 +219,10 @@ export function useApi() {
     audit: {
       list: (query?: Query) => request<any[]>('/audit', { query }),
     },
+
+    sms: {
+      sendToClient: (clientId: number, message: string) =>
+        request(`/clients/${clientId}/sms`, { method: 'POST', body: { message } }),
+    },
   }
 }

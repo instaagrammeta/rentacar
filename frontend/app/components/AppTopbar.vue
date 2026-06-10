@@ -33,6 +33,7 @@ const TITLES: Record<string, string> = {
   '/reservations': 'Брони',
   '/rentals': 'Аренды',
   '/payments': 'Платежи',
+  '/sms': 'Отправка SMS',
   '/blacklist': 'Чёрный список',
   '/accidents': 'ДТП',
   '/reports': 'Отчёты',

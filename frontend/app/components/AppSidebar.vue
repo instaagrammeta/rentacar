@@ -60,6 +60,7 @@ const items: NavItem[] = [
   { to: '/reservations', label: 'Брони', icon: 'reservations', perm: 'reservations' },
   { to: '/rentals', label: 'Аренды', icon: 'rentals', perm: 'rentals' },
   { to: '/payments', label: 'Платежи', icon: 'payments', perm: 'payments' },
+  { to: '/sms', label: 'SMS-рассылка', icon: 'bell', perm: 'clients' },
   { to: '/blacklist', label: 'Чёрный список', icon: 'blacklist', perm: 'blacklist' },
   { to: '/accidents', label: 'ДТП', icon: 'accidents', perm: 'accidents' },
   { to: '/reports', label: 'Отчёты', icon: 'reports', perm: 'reports' },
