@@ -24,15 +24,18 @@ func (s *Service) GetReservation(id uint) (*models.Reservation, error) {
 
 // ListReservations returns reservations filtered by status.
 func (s *Service) ListReservations(status string, page, perPage, offset int) (*ListResult, error) {
-	q := s.DB.Model(&models.Reservation{})
-	if status != "" {
-		q = q.Where("status = ?", status)
+	apply := func(db *gorm.DB) *gorm.DB {
+		db = db.Model(&models.Reservation{})
+		if status != "" {
+			db = db.Where("status = ?", status)
+		}
+		return db
 	}
 	var total int64
-	q.Count(&total)
+	apply(s.DB).Count(&total)
 
 	var items []models.Reservation
-	if err := q.Preload("Client").Preload("Car").Order("id desc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
+	if err := apply(s.DB).Preload("Client").Preload("Car").Order("id desc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
 		return nil, err
 	}
 	out := make([]map[string]interface{}, 0, len(items))

@@ -16,12 +16,9 @@ import (
 // nextSequence returns max(id)+1 for the given model, mirroring the Flask code
 // that predicts the next id to build human-readable codes.
 func (s *Service) nextSequence(model interface{}) int {
-	var maxID *int
-	s.DB.Model(model).Select("max(id)").Scan(&maxID)
-	if maxID == nil {
-		return 1
-	}
-	return *maxID + 1
+	var maxID int64
+	s.DB.Model(model).Select("COALESCE(MAX(id), 0)").Scan(&maxID)
+	return int(maxID) + 1
 }
 
 func (s *Service) generateClientCode() string {
@@ -86,31 +83,29 @@ type ClientListResult struct {
 
 // ListClients returns clients filtered by search term and status.
 func (s *Service) ListClients(search, status string, page, perPage, offset int) (*ClientListResult, error) {
-	var items []models.Client
-	var total int64
+	apply := func(db *gorm.DB) *gorm.DB {
+		db = db.Model(&models.Client{})
+		if search != "" {
+			like := "%" + search + "%"
+			db = db.Where(
+				s.DB.Where("first_name ILIKE ?", like).
+					Or("last_name ILIKE ?", like).
+					Or("phone ILIKE ?", like).
+					Or("client_code ILIKE ?", like).
+					Or("email ILIKE ?", like),
+			)
+		} else if status != "" {
+			db = db.Where("status = ?", status)
+		}
+		return db
+	}
 
-	if search != "" {
-		like := "%" + search + "%"
-		q := s.DB.Model(&models.Client{}).Where(
-			s.DB.Where("first_name ILIKE ?", like).
-				Or("last_name ILIKE ?", like).
-				Or("phone ILIKE ?", like).
-				Or("client_code ILIKE ?", like).
-				Or("email ILIKE ?", like),
-		)
-		q.Count(&total)
-		if err := q.Order("last_name asc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
-			return nil, err
-		}
-	} else {
-		q := s.DB.Model(&models.Client{})
-		if status != "" {
-			q = q.Where("status = ?", status)
-		}
-		q.Count(&total)
-		if err := q.Order("last_name asc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
-			return nil, err
-		}
+	var total int64
+	apply(s.DB).Count(&total)
+
+	var items []models.Client
+	if err := apply(s.DB).Order("last_name asc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
+		return nil, err
 	}
 
 	out := make([]map[string]interface{}, 0, len(items))

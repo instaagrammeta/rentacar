@@ -28,15 +28,18 @@ func (s *Service) GetRental(id uint) (*models.Rental, error) {
 
 // ListRentals returns rentals filtered by status.
 func (s *Service) ListRentals(status string, page, perPage, offset int) (*ListResult, error) {
-	q := s.DB.Model(&models.Rental{})
-	if status != "" {
-		q = q.Where("status = ?", status)
+	apply := func(db *gorm.DB) *gorm.DB {
+		db = db.Model(&models.Rental{})
+		if status != "" {
+			db = db.Where("status = ?", status)
+		}
+		return db
 	}
 	var total int64
-	q.Count(&total)
+	apply(s.DB).Count(&total)
 
 	var items []models.Rental
-	if err := q.Preload("Client").Preload("Car").Preload("Employee").Preload("VehicleReturn").
+	if err := apply(s.DB).Preload("Client").Preload("Car").Preload("Employee").Preload("VehicleReturn").
 		Order("id desc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
 		return nil, err
 	}

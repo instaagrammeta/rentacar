@@ -25,15 +25,18 @@ func (s *Service) GetAccident(id uint) (*models.Accident, error) {
 
 // ListAccidents returns accidents filtered by car.
 func (s *Service) ListAccidents(carID uint, page, perPage, offset int) (*ListResult, error) {
-	q := s.DB.Model(&models.Accident{})
-	if carID > 0 {
-		q = q.Where("car_id = ?", carID)
+	apply := func(db *gorm.DB) *gorm.DB {
+		db = db.Model(&models.Accident{})
+		if carID > 0 {
+			db = db.Where("car_id = ?", carID)
+		}
+		return db
 	}
 	var total int64
-	q.Count(&total)
+	apply(s.DB).Count(&total)
 
 	var items []models.Accident
-	if err := q.Preload("Car").Preload("Client").Preload("Photos").
+	if err := apply(s.DB).Preload("Car").Preload("Client").Preload("Photos").
 		Order("id desc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
 		return nil, err
 	}

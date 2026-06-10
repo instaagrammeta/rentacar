@@ -26,18 +26,21 @@ func (s *Service) GetPayment(id uint) (*models.Payment, error) {
 
 // ListPayments returns payments filtered by client and rental.
 func (s *Service) ListPayments(clientID, rentalID uint, page, perPage, offset int) (*ListResult, error) {
-	q := s.DB.Model(&models.Payment{})
-	if clientID > 0 {
-		q = q.Where("client_id = ?", clientID)
-	}
-	if rentalID > 0 {
-		q = q.Where("rental_id = ?", rentalID)
+	apply := func(db *gorm.DB) *gorm.DB {
+		db = db.Model(&models.Payment{})
+		if clientID > 0 {
+			db = db.Where("client_id = ?", clientID)
+		}
+		if rentalID > 0 {
+			db = db.Where("rental_id = ?", rentalID)
+		}
+		return db
 	}
 	var total int64
-	q.Count(&total)
+	apply(s.DB).Count(&total)
 
 	var items []models.Payment
-	if err := q.Preload("Client").Order("id desc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
+	if err := apply(s.DB).Preload("Client").Order("id desc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
 		return nil, err
 	}
 	out := make([]map[string]interface{}, 0, len(items))

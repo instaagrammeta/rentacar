@@ -33,22 +33,25 @@ type ListResult struct {
 
 // ListCars returns cars filtered by status and search term.
 func (s *Service) ListCars(status, search string, page, perPage, offset int) (*ListResult, error) {
-	q := s.DB.Model(&models.Car{})
-	if status != "" {
-		q = q.Where("status = ?", status)
-	}
-	if search != "" {
-		like := "%" + search + "%"
-		q = q.Where(
-			s.DB.Where("brand ILIKE ?", like).Or("model ILIKE ?", like).Or("plate_number ILIKE ?", like),
-		)
+	apply := func(db *gorm.DB) *gorm.DB {
+		db = db.Model(&models.Car{})
+		if status != "" {
+			db = db.Where("status = ?", status)
+		}
+		if search != "" {
+			like := "%" + search + "%"
+			db = db.Where(
+				s.DB.Where("brand ILIKE ?", like).Or("model ILIKE ?", like).Or("plate_number ILIKE ?", like),
+			)
+		}
+		return db
 	}
 
 	var total int64
-	q.Count(&total)
+	apply(s.DB).Count(&total)
 
 	var items []models.Car
-	if err := q.Preload("Photos").Order("id desc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
+	if err := apply(s.DB).Preload("Photos").Order("id desc").Limit(perPage).Offset(offset).Find(&items).Error; err != nil {
 		return nil, err
 	}
 	out := make([]map[string]interface{}, 0, len(items))
