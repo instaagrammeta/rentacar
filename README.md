@@ -1,113 +1,79 @@
-# Rentacar CRM
+# Wheelzie — Rentacar CRM (v2, public online edition)
 
-Профессиональная CRM-система для компаний по аренде автомобилей. Полностью
-заменяет учёт в Excel: клиенты, автомобили, бронирования, договоры аренды,
-возвраты, платежи, отчёты и многое другое. Работает **полностью офлайн** на
-Windows и поставляется в виде установщика `.exe`.
+A car-rental management system (CRM) for the public web. Version 2 is a clean,
+containerised rewrite:
 
-> Интерфейс приложения полностью на русском языке.
+- **Backend** — Go (Gin) + PostgreSQL + Redis
+- **Frontend** — Nuxt 4 + Vue 3 + TypeScript + TailwindCSS + Pinia
+- **Infra** — Docker Compose + GitHub Actions CI/CD
 
-![tech](https://img.shields.io/badge/backend-Flask%203-green) ![tech](https://img.shields.io/badge/frontend-Vue%203%20%2B%20Vuetify%203-green) ![tech](https://img.shields.io/badge/desktop-Electron-green)
+> The legacy Python/Flask backend, the old Vue/Vite frontend and the Electron
+> desktop wrapper have been removed on this branch. Only the clean v2 code
+> remains.
 
-## Возможности (12 модулей)
-
-| # | Модуль | Описание |
-|---|--------|----------|
-| 1 | **Главная** | Доступные/арендованные/забронированные авто, выручка за день и месяц, активные аренды, предстоящие возвраты, графики |
-| 2 | **Клиенты** | Полная карточка, сканы документов, проверка возраста (≥ 21) и стажа (≥ 1 год), статусы, история |
-| 3 | **VIP / постоянные клиенты** | Уникальный код клиента + QR-код, поиск по телефону / коду / QR |
-| 4 | **Автомобили** | Характеристики, тарифы (сутки/неделя/месяц), депозит, статусы, фотографии |
-| 5 | **Бронирования** | Создание, подтверждение, отмена |
-| 6 | **Аренда** | Договор с автоматическим расчётом стоимости и генерацией PDF |
-| 7 | **Возврат** | Автоматический расчёт доп. дней, просрочки, ущерба и итогового платежа |
-| 8 | **Платежи** | Наличные / перевод / карта, квитанции PDF, история |
-| 9 | **Чёрный список** | Блокировка клиентов; заблокированные не могут арендовать |
-| 10 | **ДТП и повреждения** | Дата, фото, описание, стоимость ремонта |
-| 11 | **Отчёты** | Дневная/месячная/годовая выручка, прибыльные авто, должники, статистика; экспорт в Excel/PDF |
-| 12 | **Настройки** | Данные компании и логотип (используются в PDF), резервные копии |
-
-Дополнительно: **роли и права** (Администратор, Менеджер аренды, Кассир,
-Оператор), **JWT-аутентификация**, **журнал аудита**, **автоматические резервные
-копии**, собственный формат файла **`.rentacar`** (Сохранить/Открыть проект).
-
-## Технологический стек
-
-- **Backend:** Python 3.13, Flask, SQLAlchemy, SQLite, Alembic, JWT, OpenPyXL, Pandas, ReportLab
-- **Frontend:** Vue 3, Vue Router, Pinia, Axios, Vuetify 3, Vue I18n
-- **Desktop:** Electron (основной вариант) или PyWebView (альтернатива)
-
-## Структура проекта
-
-```
-rentacar/
-├── backend/            # Flask API (clean architecture)
-│   ├── app/
-│   │   ├── models/         # SQLAlchemy модели
-│   │   ├── repositories/   # Repository Pattern
-│   │   ├── services/       # Бизнес-логика (Service Layer)
-│   │   ├── api/            # REST blueprints
-│   │   └── utils/          # Безопасность, ошибки, PDF, QR и т.д.
-│   ├── migrations/         # Alembic
-│   ├── run.py              # Точка входа
-│   └── seed.py             # Демо-данные
-├── frontend/           # Vue 3 + Vuetify SPA
-│   └── src/{views,stores,api,router,i18n,plugins}
-├── desktop/            # Electron + PyWebView упаковка
-├── docs/               # Документация
-└── build_windows.ps1   # Сборка установщика .exe
-```
-
-## Быстрый старт (разработка)
-
-### Backend
+## Run the whole project with one command
 
 ```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python seed.py                   # создаёт admin/admin123 и демо-данные
-python run.py                    # http://127.0.0.1:5000
+docker compose up --build
 ```
 
-### Frontend
+This starts four services:
 
-```bash
-cd frontend
-npm install
-npm run dev                      # http://127.0.0.1:5173
+| Service    | URL / Port                  | Notes                              |
+|------------|-----------------------------|------------------------------------|
+| frontend   | http://localhost:3000       | Nuxt 4 SPA (Wheelzie UI)           |
+| backend    | http://localhost:5000/api   | Go + Gin REST API                  |
+| postgres   | localhost:5432              | data store                         |
+| redis      | localhost:6379              | cache + JWT logout blacklist       |
+
+Default login: **admin / admin123** (change it after the first sign-in).
+
+On first launch the database is migrated and seeded automatically (admin, demo
+users, company settings, demo cars & clients).
+
+## Configuration
+
+Copy `.env.example` files if you want to override defaults. The most important
+variables when deploying to a real server:
+
+```env
+# docker-compose (root) reads these
+POSTGRES_PASSWORD=strong-password
+RENTACAR_JWT_SECRET=long-random-secret
+RENTACAR_SECRET_KEY=another-random-secret
+
+# URL of the API as seen from the user's browser (set to your domain)
+NUXT_PUBLIC_API_BASE=https://api.example.com/api
+RENTACAR_CORS_ORIGINS=https://app.example.com
 ```
 
-Откройте http://127.0.0.1:5173 и войдите как **admin / admin123**.
+## Project structure
 
-## Сборка Windows-установщика (.exe)
-
-```powershell
-./build_windows.ps1
+```
+.
+├── backend-go/        # Go (Gin + GORM + Redis) backend
+├── frontend/          # Nuxt 4 + Vue 3 + Tailwind + Pinia frontend
+├── docker-compose.yml # full stack (postgres + redis + backend + frontend)
+└── .github/workflows/ # CI/CD for backend and frontend
 ```
 
-Результат: `desktop/release/Rentacar CRM Setup <версия>.exe` — установка в один
-клик, ярлык на рабочем столе, работает без интернета.
+See [`backend-go/README.md`](backend-go/README.md) for backend details.
 
-## Документация
+## CI/CD
 
-- [Руководство по установке](docs/INSTALLATION.md)
-- [Руководство пользователя](docs/USER_GUIDE.md)
-- [Документация для разработчиков](docs/DEVELOPER.md)
-- [Документация API](docs/API.md)
-- [Схема базы данных](docs/DATABASE.md)
+GitHub Actions builds, lints/tests and produces Docker images for both apps on
+every push to `v-2` / `main`:
 
-## Учётные записи по умолчанию
+- `backend-go.yml` — gofmt, vet, build, test, Docker image → GHCR
+- `frontend.yml` — install, Nuxt build, Docker image → GHCR
 
-| Логин | Пароль | Роль |
-|-------|--------|------|
-| admin | admin123 | Администратор |
-| manager | manager123 | Менеджер аренды |
-| cashier | cashier123 | Кассир |
-| operator | operator123 | Оператор |
+## Deploying on a server
 
-> Смените пароли после первого входа.
+1. Install Docker + Docker Compose on the server.
+2. `git clone -b v-2 https://github.com/instaagrammeta/rentacar.git`
+3. Set the environment variables above (a root `.env` file works).
+4. `docker compose up --build -d`
+5. Put Nginx + HTTPS (certbot) in front of ports `3000` (frontend) and
+   `5000` (backend) for your domain.
 
-## Лицензия
-
-MIT
+Default credentials should be changed immediately in production.

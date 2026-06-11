@@ -1,33 +1,21 @@
-# ---- Python ----
-__pycache__/
-*.py[cod]
-*.egg-info/
-.venv/
-venv/
-env/
-.python-version
+# ---- Go backend ----
+backend-go/data/
+backend-go/bin/
+backend-go/out/
+backend-go/server
+backend-go/seed
 
-# ---- Backend runtime data ----
-backend/data/
-backend/dist/
-backend/build/
-*.db
-*.sqlite3
-
-# ---- Backups & exports ----
-backups/
-**/exports/
-
-# ---- Node / frontend ----
+# ---- Node / Nuxt frontend ----
 node_modules/
+frontend/.nuxt/
+frontend/.output/
+frontend/.nitro/
+frontend/.cache/
 frontend/dist/
-desktop/frontend-dist/
-desktop/backend-dist/
-desktop/release/
-.npm/
 
-# ---- Electron ----
-desktop/node_modules/
+# ---- Env & secrets ----
+.env
+*.env.local
 
 # ---- Logs ----
 *.log

@@ -1,0 +1,16 @@
+# Runtime data
+/data/
+*.db
+*.log
+
+# Build artefacts (anchored to module root so cmd/server & cmd/seed are kept)
+/bin/
+/out/
+/server
+/seed
+
+# Local environment
+# .env
+
+# OS / editor
+.DS_Store
