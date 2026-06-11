@@ -7,6 +7,7 @@ import type {
   Option,
   Paginated,
   Payment,
+  PublicRentalView,
   Rental,
   Reservation,
   User,
@@ -150,6 +151,15 @@ export function useApi() {
         request<VehicleReturn>(`/rentals/${id}/return/preview`, { method: 'POST', body }),
       createReturn: (id: number, body: Query) =>
         request<VehicleReturn>(`/rentals/${id}/return`, { method: 'POST', body }),
+      qr: (id: number) =>
+        request<{ qr_code_path: string | null; public_token: string | null; public_url: string }>(
+          `/rentals/${id}/qr`,
+        ),
+    },
+
+    // Public, unauthenticated endpoints (rental status page reached via QR).
+    public: {
+      rental: (token: string) => request<PublicRentalView>(`/public/rentals/${token}`),
     },
 
     payments: {

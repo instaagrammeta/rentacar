@@ -111,6 +111,38 @@ func (h *Handler) DownloadContract(c *gin.Context) {
 	c.FileAttachment(full, rental.ContractNumber+".pdf")
 }
 
+// RentalQR returns (and lazily generates) the public QR code for a rental.
+// The QR encodes a link to the public status page the client opens to see how
+// much time is left on the rental.
+func (h *Handler) RentalQR(c *gin.Context) {
+	id, ok := paramID(c, "id")
+	if !ok {
+		return
+	}
+	rental, err := h.Svc.EnsureRentalQR(id)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"qr_code_path": rental.QRCodePath,
+		"public_token": rental.PublicToken,
+		"public_url":   h.Svc.PublicRentalURL(rental),
+	})
+}
+
+// PublicRental returns the public, unauthenticated view of a rental looked up
+// by its opaque token — used by the page a client reaches via the QR code.
+func (h *Handler) PublicRental(c *gin.Context) {
+	token := c.Param("token")
+	rental, err := h.Svc.GetRentalByToken(token)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, h.Svc.PublicRentalView(rental))
+}
+
 // PreviewReturn calculates return charges without persisting.
 func (h *Handler) PreviewReturn(c *gin.Context) {
 	id, ok := paramID(c, "id")

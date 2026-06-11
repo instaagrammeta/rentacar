@@ -36,6 +36,42 @@
             <Info label="К оплате" :value="fmt.money(rental.vehicle_return.final_payment)" />
           </dl>
         </div>
+
+        <!-- QR code for the client -->
+        <div class="mt-6 rounded-xl border border-surface-border p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="font-semibold text-ink">QR-код для клиента</h4>
+              <p class="text-sm text-ink-muted">
+                Клиент сканирует код и видит, сколько времени осталось до возврата.
+              </p>
+            </div>
+            <button v-if="!qr" class="btn-secondary" :disabled="qrLoading" @click="loadQr">
+              <AppIcon name="eye" size="18" /> Показать
+            </button>
+          </div>
+
+          <div v-if="qr" class="mt-4 flex flex-col items-center gap-3">
+            <img
+              v-if="qr.qr_code_path"
+              :src="api.fileUrl(qr.qr_code_path)"
+              alt="QR-код аренды"
+              class="h-48 w-48 rounded-lg border border-surface-border bg-white p-2"
+            >
+            <a
+              :href="qr.public_url"
+              target="_blank"
+              rel="noopener"
+              class="break-all text-center text-sm text-primary-600 underline"
+            >
+              {{ qr.public_url }}
+            </a>
+            <div class="flex gap-2">
+              <button class="btn-secondary" @click="copyLink"><AppIcon name="check" size="18" /> Копировать ссылку</button>
+              <button class="btn-secondary" @click="printQr"><AppIcon name="download" size="18" /> Печать</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Return form -->
@@ -86,6 +122,8 @@ const id = Number(route.params.id)
 const rental = ref<Rental | null>(null)
 const preview = ref<VehicleReturn | null>(null)
 const saving = ref(false)
+const qr = ref<{ qr_code_path: string | null; public_token: string | null; public_url: string } | null>(null)
+const qrLoading = ref(false)
 const ret = ref<Record<string, any>>({
   return_date: new Date().toISOString().slice(0, 10),
   mileage: 0,
@@ -128,6 +166,43 @@ async function downloadContract() {
   } catch {
     ui.error('Не удалось скачать договор')
   }
+}
+
+async function loadQr() {
+  qrLoading.value = true
+  try {
+    qr.value = await api.rentals.qr(id)
+  } catch {
+    /* handled centrally */
+  } finally {
+    qrLoading.value = false
+  }
+}
+
+async function copyLink() {
+  if (!qr.value?.public_url) return
+  try {
+    await navigator.clipboard.writeText(qr.value.public_url)
+    ui.success('Ссылка скопирована')
+  } catch {
+    ui.error('Не удалось скопировать ссылку')
+  }
+}
+
+function printQr() {
+  if (!qr.value?.qr_code_path) return
+  const url = api.fileUrl(qr.value.qr_code_path)
+  const w = window.open('', '_blank')
+  if (!w) return
+  w.document.write(
+    `<html><head><title>QR — ${rental.value?.contract_number || ''}</title></head>` +
+      `<body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif">` +
+      `<h2 style="margin-bottom:8px">${rental.value?.contract_number || ''}</h2>` +
+      `<img src="${url}" style="width:320px;height:320px" onload="window.print()">` +
+      `<p style="margin-top:8px;color:#555">Сканируйте, чтобы увидеть оставшееся время аренды</p>` +
+      `</body></html>`,
+  )
+  w.document.close()
 }
 
 onMounted(load)

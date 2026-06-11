@@ -59,6 +59,11 @@ type Config struct {
 	SMSSender  string
 	SMSSecret  string
 
+	// PublicURL is the public base URL of the frontend (no trailing slash),
+	// used to build links encoded into QR codes (e.g. the rental status page
+	// a client opens after scanning). Override with your domain/IP in prod.
+	PublicURL string
+
 	// CORS
 	CORSOrigins []string
 }
@@ -130,6 +135,8 @@ func Load() *Config {
 		SMSLogin:   getenv("RENTACAR_SMS_LOGIN", ""),
 		SMSSender:  getenv("RENTACAR_SMS_SENDER", ""),
 		SMSSecret:  getenv("RENTACAR_SMS_SECRET", ""),
+
+		PublicURL: strings.TrimRight(getenv("RENTACAR_PUBLIC_URL", "http://localhost:3000"), "/"),
 	}
 
 	cfg.JWTSecret = getenv("RENTACAR_JWT_SECRET", cfg.SecretKey)

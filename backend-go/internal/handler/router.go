@@ -99,9 +99,13 @@ func (h *Handler) SetupRouter() *gin.Engine {
 		rentals.POST("", h.CreateRental)
 		rentals.POST("/:id/cancel", h.CancelRental)
 		rentals.GET("/:id/contract", h.DownloadContract)
+		rentals.GET("/:id/qr", h.RentalQR)
 		rentals.POST("/:id/return/preview", auth.RequirePermission("returns"), h.PreviewReturn)
 		rentals.POST("/:id/return", auth.RequirePermission("returns"), h.CreateReturn)
 	}
+
+	// ---- Public (no auth): rental status page reached via QR code ----
+	api.GET("/public/rentals/:token", h.PublicRental)
 
 	// ---- Payments ----
 	payments := api.Group("/payments", auth.RequireAuth(), auth.RequirePermission("payments"))

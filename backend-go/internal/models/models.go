@@ -249,6 +249,8 @@ type Rental struct {
 	TotalPrice      float64      `gorm:"not null;default:0" json:"total_price"`
 	StartMileage    *int         `json:"start_mileage"`
 	PDFPath         *string      `gorm:"size:255" json:"pdf_path"`
+	QRCodePath      *string      `gorm:"size:255" json:"qr_code_path"`
+	PublicToken     *string      `gorm:"size:64;uniqueIndex" json:"public_token"`
 	Notes           *string      `gorm:"type:text" json:"notes"`
 	Status          RentalStatus `gorm:"size:32;not null;default:active" json:"status"`
 
@@ -283,6 +285,8 @@ func (r *Rental) ToMap() map[string]interface{} {
 	m["total_price"] = r.TotalPrice
 	m["start_mileage"] = r.StartMileage
 	m["pdf_path"] = r.PDFPath
+	m["qr_code_path"] = r.QRCodePath
+	m["public_token"] = r.PublicToken
 	m["notes"] = r.Notes
 	m["status"] = string(r.Status)
 	m["status_label"] = r.Status.Label()

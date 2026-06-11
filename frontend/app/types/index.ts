@@ -90,6 +90,8 @@ export interface Rental {
   total_price: number
   start_mileage: number | null
   pdf_path: string | null
+  qr_code_path: string | null
+  public_token: string | null
   notes: string | null
   status: string
   status_label: string
@@ -100,6 +102,23 @@ export interface Rental {
   vehicle_return?: VehicleReturn
   created_at: string
   updated_at: string
+}
+
+// PublicRentalView is the privacy-safe payload returned by the unauthenticated
+// /public/rentals/:token endpoint and shown on the QR status page.
+export interface PublicRentalView {
+  contract_number: string
+  car_name: string
+  client_name: string
+  status: string
+  status_label: string
+  rental_start: string
+  rental_end: string
+  pickup_at: string | null
+  due_at: string | null
+  server_time: string
+  remaining_seconds: number
+  is_overdue: boolean
 }
 
 export interface VehicleReturn {

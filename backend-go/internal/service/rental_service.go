@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"github.com/instaagrammeta/rentacar/backend-go/internal/apperr"
@@ -154,6 +155,8 @@ func (s *Service) CreateRental(in RentalInput, actor *Actor) (*models.Rental, er
 		Notes:          in.Notes,
 		Status:         models.RentalActive,
 	}
+	token := uuid.NewString()
+	rental.PublicToken = &token
 	if err := s.DB.Create(rental).Error; err != nil {
 		return nil, err
 	}
@@ -164,8 +167,10 @@ func (s *Service) CreateRental(in RentalInput, actor *Actor) (*models.Rental, er
 			Update("status", models.ReservationConfirmed)
 	}
 
-	// Generate the contract PDF (best effort: never fail the contract creation).
+	// Generate the contract PDF and the public QR code (best effort: never
+	// fail the contract creation if these auxiliary artefacts fail).
 	s.generateContractPDF(rental)
+	s.generateRentalQR(rental)
 
 	s.record(actor, "create_rental", "rental", uintPtr(rental.ID), "Договор "+rental.ContractNumber)
 	return s.GetRental(rental.ID)
@@ -185,6 +190,126 @@ func (s *Service) generateContractPDF(rental *models.Rental) {
 	}
 	s.DB.Model(&models.Rental{}).Where("id = ?", rental.ID).Update("pdf_path", path)
 	rental.PDFPath = &path
+}
+
+// publicURLForToken builds the absolute public page URL a client opens after
+// scanning the QR code, e.g. "https://example.com/r/<token>".
+func (s *Service) publicURLForToken(token string) string {
+	return s.Cfg.PublicURL + "/r/" + token
+}
+
+// generateRentalQR creates the QR-code PNG that points to the public rental
+// status page. Best effort: failures are logged and never break the contract.
+func (s *Service) generateRentalQR(rental *models.Rental) {
+	if rental.PublicToken == nil || *rental.PublicToken == "" {
+		token := uuid.NewString()
+		rental.PublicToken = &token
+		s.DB.Model(&models.Rental{}).Where("id = ?", rental.ID).Update("public_token", token)
+	}
+	url := s.publicURLForToken(*rental.PublicToken)
+	filename := fmt.Sprintf("rental-%d.png", rental.ID)
+	path, err := s.Media.GenerateQR(url, filename)
+	if err != nil {
+		log.Printf("rental: QR generation failed: %v", err)
+		return
+	}
+	s.DB.Model(&models.Rental{}).Where("id = ?", rental.ID).Update("qr_code_path", path)
+	rental.QRCodePath = &path
+}
+
+// EnsureRentalQR makes sure a rental has a public token and QR code, generating
+// them on demand (used for rentals created before this feature existed).
+func (s *Service) EnsureRentalQR(id uint) (*models.Rental, error) {
+	rental, err := s.GetRental(id)
+	if err != nil {
+		return nil, err
+	}
+	if rental.QRCodePath == nil || *rental.QRCodePath == "" ||
+		rental.PublicToken == nil || *rental.PublicToken == "" {
+		s.generateRentalQR(rental)
+	}
+	return s.GetRental(id)
+}
+
+// PublicRentalURL returns the absolute public link for a rental's QR target.
+func (s *Service) PublicRentalURL(rental *models.Rental) string {
+	if rental.PublicToken == nil {
+		return ""
+	}
+	return s.publicURLForToken(*rental.PublicToken)
+}
+
+// GetRentalByToken looks up a rental by its public token (no auth required).
+func (s *Service) GetRentalByToken(token string) (*models.Rental, error) {
+	if token == "" {
+		return nil, apperr.NotFound("Аренда не найдена")
+	}
+	var r models.Rental
+	err := s.DB.Preload("Car").Preload("Client").Where("public_token = ?", token).First(&r).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperr.NotFound("Аренда не найдена")
+		}
+		return nil, err
+	}
+	return &r, nil
+}
+
+// PublicRentalView builds the minimal, privacy-safe payload shown on the public
+// status page, including how much time is left until the return deadline.
+func (s *Service) PublicRentalView(r *models.Rental) map[string]interface{} {
+	now := time.Now()
+
+	var due *time.Time
+	if r.DueAt != nil {
+		due = r.DueAt
+	}
+
+	remainingSeconds := int64(0)
+	isOverdue := false
+	if due != nil {
+		diff := due.Sub(now)
+		remainingSeconds = int64(diff.Seconds())
+		if remainingSeconds < 0 {
+			isOverdue = true
+		}
+	}
+	// Once the rental is completed or cancelled, the countdown is irrelevant.
+	if r.Status != models.RentalActive {
+		remainingSeconds = 0
+		isOverdue = false
+	}
+
+	carName := ""
+	if r.Car != nil {
+		carName = r.Car.DisplayName()
+	}
+	clientName := ""
+	if r.Client != nil {
+		clientName = r.Client.FirstName
+	}
+
+	out := map[string]interface{}{
+		"contract_number":   r.ContractNumber,
+		"car_name":          carName,
+		"client_name":       clientName,
+		"status":            string(r.Status),
+		"status_label":      r.Status.Label(),
+		"rental_start":      r.RentalStart.Format("2006-01-02"),
+		"rental_end":        r.RentalEnd.Format("2006-01-02"),
+		"pickup_at":         nil,
+		"due_at":            nil,
+		"server_time":       now.UTC().Format("2006-01-02T15:04:05Z07:00"),
+		"remaining_seconds": remainingSeconds,
+		"is_overdue":        isOverdue,
+	}
+	if r.PickupAt != nil {
+		out["pickup_at"] = r.PickupAt.UTC().Format("2006-01-02T15:04:05Z07:00")
+	}
+	if due != nil {
+		out["due_at"] = due.UTC().Format("2006-01-02T15:04:05Z07:00")
+	}
+	return out
 }
 
 // CancelRental cancels an active rental and frees the car.
