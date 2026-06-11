@@ -10,7 +10,7 @@
 /seed
 
 # Local environment
-.env
+# .env
 
 # OS / editor
 .DS_Store
