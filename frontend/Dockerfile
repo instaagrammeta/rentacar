@@ -4,9 +4,10 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
-# Enable pnpm via corepack. pnpm resolves Nuxt 4's large dependency tree
-# (incl. the many oxc native bindings) far more reliably than npm.
-RUN corepack enable && corepack prepare pnpm@9 --activate
+# Install pnpm 10. pnpm resolves Nuxt 4's large dependency tree (incl. the
+# many oxc native bindings) far more reliably than npm. v10 fixes the
+# ERR_PNPM_WORKSPACE_PKG_NOT_FOUND "workspace:*" bug present in pnpm 9.
+RUN npm install -g pnpm@10
 
 ENV NODE_OPTIONS="--max-old-space-size=2048"
 
