@@ -4,9 +4,16 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
-# Copy the whole project first so the `postinstall` (nuxt prepare) hook works.
+# 1. Copy package.json first and install deps (skip postinstall to avoid
+#    nuxt prepare failing before source files are available).
+COPY package.json ./
+RUN npm install --ignore-scripts
+
+# 2. Copy the rest of the project source.
 COPY . .
-RUN npm install
+
+# 3. Run nuxt prepare (generates .nuxt types) then build.
+RUN npx nuxt prepare
 RUN npm run build
 
 # ---- Runtime stage ----
