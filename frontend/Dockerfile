@@ -1,29 +1,34 @@
 # syntax=docker/dockerfile:1
 
 # ---- Build stage ----
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
-# Ensure npm can reach the registry (helps in restrictive Docker networks).
-RUN npm config set registry https://registry.npmjs.org/ && \
-    npm config set fetch-retries 5 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000
+# Increase Node memory for large dependency trees
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
-# 1. Copy package files and .npmrc, then install deps.
+# 1. Copy package files and .npmrc.
 COPY package.json .npmrc ./
-RUN npm install --ignore-scripts || \
-    (echo "=== NPM DEBUG LOG ===" && cat /root/.npm/_logs/*.log 2>/dev/null && exit 1)
 
-# 2. Copy the rest of the project source.
+# 2. Install deps. Use --prefer-online to avoid stale caches and
+#    --maxsockets 5 to prevent connection pool exhaustion on Alpine.
+RUN npm install --prefer-online --maxsockets 5 --ignore-scripts 2>&1; \
+    EXIT_CODE=$?; \
+    if [ $EXIT_CODE -ne 0 ]; then \
+      echo "=== NPM DEBUG LOG (last 200 lines) ==="; \
+      tail -200 /root/.npm/_logs/*-debug-0.log 2>/dev/null; \
+      exit $EXIT_CODE; \
+    fi
+
+# 3. Copy the rest of the project source.
 COPY . .
 
-# 3. Run nuxt prepare (generates .nuxt types) then build.
+# 4. Run nuxt prepare (generates .nuxt types) then build.
 RUN npx nuxt prepare
 RUN npm run build
 
 # ---- Runtime stage ----
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 
 ENV NODE_ENV=production \
