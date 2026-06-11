@@ -4,10 +4,10 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# 1. Copy package files and install deps.
-#    Use --legacy-peer-deps to resolve Nuxt 4 / Pinia peer conflicts.
-COPY package.json ./
-RUN npm install --legacy-peer-deps --ignore-scripts
+# 1. Copy package files and .npmrc, then install deps.
+COPY package.json .npmrc ./
+RUN npm install --loglevel verbose --ignore-scripts 2>&1 || \
+    (cat /root/.npm/_logs/*.log 2>/dev/null; exit 1)
 
 # 2. Copy the rest of the project source.
 COPY . .
