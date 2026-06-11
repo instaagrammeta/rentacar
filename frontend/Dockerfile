@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1
 
 # ---- Build stage ----
-FROM node:22-alpine AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 
-# 1. Copy package.json first and install deps (skip postinstall to avoid
-#    nuxt prepare failing before source files are available).
+# 1. Copy package files and install deps.
+#    Use --legacy-peer-deps to resolve Nuxt 4 / Pinia peer conflicts.
 COPY package.json ./
-RUN npm install --ignore-scripts
+RUN npm install --legacy-peer-deps --ignore-scripts
 
 # 2. Copy the rest of the project source.
 COPY . .
@@ -17,7 +17,7 @@ RUN npx nuxt prepare
 RUN npm run build
 
 # ---- Runtime stage ----
-FROM node:22-alpine
+FROM node:20-alpine
 WORKDIR /app
 
 ENV NODE_ENV=production \
