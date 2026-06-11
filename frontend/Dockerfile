@@ -4,10 +4,16 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# Ensure npm can reach the registry (helps in restrictive Docker networks).
+RUN npm config set registry https://registry.npmjs.org/ && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
 # 1. Copy package files and .npmrc, then install deps.
 COPY package.json .npmrc ./
-RUN npm install --loglevel verbose --ignore-scripts 2>&1 || \
-    (cat /root/.npm/_logs/*.log 2>/dev/null; exit 1)
+RUN npm install --ignore-scripts || \
+    (echo "=== NPM DEBUG LOG ===" && cat /root/.npm/_logs/*.log 2>/dev/null && exit 1)
 
 # 2. Copy the rest of the project source.
 COPY . .
