@@ -18,5 +18,10 @@
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.12.2",
     "typescript": "^5.6.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "vue": "<3.5.36"
+    }
   }
 }
