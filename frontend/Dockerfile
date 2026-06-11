@@ -4,28 +4,22 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
-# Increase Node memory for large dependency trees
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+# Enable pnpm via corepack. pnpm resolves Nuxt 4's large dependency tree
+# (incl. the many oxc native bindings) far more reliably than npm.
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
-# 1. Copy package files and .npmrc.
-COPY package.json .npmrc ./
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 
-# 2. Install deps. Use --prefer-online to avoid stale caches and
-#    --maxsockets 5 to prevent connection pool exhaustion on Alpine.
-RUN npm install --prefer-online --maxsockets 5 --ignore-scripts 2>&1; \
-    EXIT_CODE=$?; \
-    if [ $EXIT_CODE -ne 0 ]; then \
-      echo "=== NPM DEBUG LOG (last 200 lines) ==="; \
-      tail -200 /root/.npm/_logs/*-debug-0.log 2>/dev/null; \
-      exit $EXIT_CODE; \
-    fi
+# 1. Copy manifest and install deps (skip scripts so nuxt prepare runs later).
+COPY package.json ./
+RUN pnpm install --no-frozen-lockfile --ignore-scripts
 
-# 3. Copy the rest of the project source.
+# 2. Copy the rest of the project source.
 COPY . .
 
-# 4. Run nuxt prepare (generates .nuxt types) then build.
-RUN npx nuxt prepare
-RUN npm run build
+# 3. Generate Nuxt types, then build.
+RUN pnpm exec nuxt prepare
+RUN pnpm run build
 
 # ---- Runtime stage ----
 FROM node:22-alpine
