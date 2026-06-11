@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -111,15 +112,32 @@ func (h *Handler) DownloadContract(c *gin.Context) {
 	c.FileAttachment(full, rental.ContractNumber+".pdf")
 }
 
-// RentalQR returns (and lazily generates) the public QR code for a rental.
-// The QR encodes a link to the public status page the client opens to see how
-// much time is left on the rental.
+// frontendBaseURL derives the public frontend base URL (scheme://host[:port])
+// from the incoming request, so generated QR links point to whatever address
+// the staff member is actually using. Falls back to the configured PublicURL.
+func frontendBaseURL(c *gin.Context, fallback string) string {
+	if o := strings.TrimSpace(c.GetHeader("Origin")); o != "" {
+		return strings.TrimRight(o, "/")
+	}
+	if ref := strings.TrimSpace(c.GetHeader("Referer")); ref != "" {
+		if u, err := url.Parse(ref); err == nil && u.Scheme != "" && u.Host != "" {
+			return u.Scheme + "://" + u.Host
+		}
+	}
+	return fallback
+}
+
+// RentalQR returns (and regenerates) the public QR code for a rental. The QR
+// encodes a link to the public status page the client opens to see how much
+// time is left. The link host is taken from the request origin so it always
+// points to a reachable address.
 func (h *Handler) RentalQR(c *gin.Context) {
 	id, ok := paramID(c, "id")
 	if !ok {
 		return
 	}
-	rental, err := h.Svc.EnsureRentalQR(id)
+	base := frontendBaseURL(c, h.Cfg.PublicURL)
+	rental, err := h.Svc.RegenerateRentalQR(id, base)
 	if err != nil {
 		respondError(c, err)
 		return
@@ -127,7 +145,7 @@ func (h *Handler) RentalQR(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"qr_code_path": rental.QRCodePath,
 		"public_token": rental.PublicToken,
-		"public_url":   h.Svc.PublicRentalURL(rental),
+		"public_url":   h.Svc.PublicRentalURLWithBase(rental, base),
 	})
 }
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -229,6 +230,49 @@ func (s *Service) EnsureRentalQR(id uint) (*models.Rental, error) {
 		s.generateRentalQR(rental)
 	}
 	return s.GetRental(id)
+}
+
+// RegenerateRentalQR (re)builds the QR-code PNG for a rental using the given
+// base URL (typically the address the staff member opened the app from, so the
+// QR always points to a reachable host — no static config needed). The public
+// token is preserved across regenerations. Falls back to the configured
+// PublicURL when baseURL is empty.
+func (s *Service) RegenerateRentalQR(id uint, baseURL string) (*models.Rental, error) {
+	rental, err := s.GetRental(id)
+	if err != nil {
+		return nil, err
+	}
+	if rental.PublicToken == nil || *rental.PublicToken == "" {
+		token := uuid.NewString()
+		rental.PublicToken = &token
+		s.DB.Model(&models.Rental{}).Where("id = ?", id).Update("public_token", token)
+	}
+	base := strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	if base == "" {
+		base = s.Cfg.PublicURL
+	}
+	url := base + "/r/" + *rental.PublicToken
+	filename := fmt.Sprintf("rental-%d.png", id)
+	if path, err := s.Media.GenerateQR(url, filename); err != nil {
+		log.Printf("rental: QR regeneration failed: %v", err)
+	} else {
+		s.DB.Model(&models.Rental{}).Where("id = ?", id).Update("qr_code_path", path)
+		rental.QRCodePath = &path
+	}
+	return s.GetRental(id)
+}
+
+// PublicRentalURLWithBase builds the public link for a rental using a runtime
+// base URL, falling back to the configured PublicURL.
+func (s *Service) PublicRentalURLWithBase(rental *models.Rental, baseURL string) string {
+	if rental.PublicToken == nil {
+		return ""
+	}
+	base := strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	if base == "" {
+		base = s.Cfg.PublicURL
+	}
+	return base + "/r/" + *rental.PublicToken
 }
 
 // PublicRentalURL returns the absolute public link for a rental's QR target.
